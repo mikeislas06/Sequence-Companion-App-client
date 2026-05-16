@@ -38,7 +38,7 @@ export function joinTeam(roomCode: string, teamColor: TeamColor): void {
 	getSocket().emit("team:join", { roomCode, teamColor });
 }
 
-export function startgame(roomCode: string): void {
+export function startGame(roomCode: string): void {
 	getSocket().emit("game:start", { roomCode });
 }
 
