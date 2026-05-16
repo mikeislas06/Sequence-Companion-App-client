@@ -47,7 +47,7 @@ export function TeamPanel({ team, myPlayerId, onJoin, disabled }: TeamPanelProps
 			{!amOnTeam && !isFull && !disabled && (
 				<button
 					onClick={() => onJoin(team.color)}
-					className={`mt-1 min-h-[40px] rounded-lg ${BTN_BG[team.color]} text-white text-sm font-semibold`}
+					className={`mt-1 min-h-10 rounded-lg ${BTN_BG[team.color]} text-white text-sm font-semibold`}
 				>
 					Join
 				</button>
