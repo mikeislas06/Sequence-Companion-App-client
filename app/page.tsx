@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ConfigPanel } from "@/components/lobby/ConfigPanel";
 import * as socket from "@/lib/socket";
+import type { GameConfig } from "@/lib/game-types";
 
-const DEFAULT_CONFIG = {
-	teamCount: 2 as const,
+const DEFAULT_CONFIG: GameConfig = {
+	teamCount: 2,
 	maxPlayersPerTeam: 2,
-	timer: "off" as const,
+	timer: "off",
 	enforceNoTableTalk: false,
 	allowDeadCards: true,
 	showDeckCount: true,
@@ -18,12 +20,16 @@ export default function Home() {
 	const router = useRouter();
 	const [name, setName] = useState("");
 	const [code, setCode] = useState("");
-	const [mode, setMode] = useState<"idle" | "join">("idle");
+	const [mode, setMode] = useState<"idle" | "create" | "join">("idle");
+	const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
 		socket.connect();
 		const offs = [
+			socket.onRoomUpdated((room) => {
+				sessionStorage.setItem("currentRoom", JSON.stringify(room));
+			}),
 			socket.onRoomCreated(({ roomCode, playerId }) => {
 				sessionStorage.setItem("playerId", playerId);
 				sessionStorage.setItem("playerName", name);
@@ -41,7 +47,7 @@ export default function Home() {
 
 	const handleCreate = () => {
 		if (!name.trim()) return setError("Enter your name first");
-		socket.createRoom(name.trim(), DEFAULT_CONFIG);
+		socket.createRoom(name.trim(), config);
 	};
 
 	const handleJoin = () => {
@@ -66,10 +72,18 @@ export default function Home() {
 					maxLength={20}
 				/>
 				{error && <p className="text-danger text-sm text-center">{error}</p>}
-				<Button fullWidth onClick={handleCreate}>
-					Create Game
-				</Button>
-				{mode === "idle" ? (
+				{mode === "create" && (
+					<ConfigPanel
+						config={config}
+						onChange={(u) => setConfig((prev) => ({ ...prev, ...u }))}
+					/>
+				)}
+				{mode !== "join" && (
+					<Button fullWidth onClick={mode === "create" ? handleCreate : () => setMode("create")}>
+						Create Game
+					</Button>
+				)}
+				{mode !== "join" ? (
 					<Button fullWidth variant="secondary" onClick={() => setMode("join")}>
 						Join Game
 					</Button>

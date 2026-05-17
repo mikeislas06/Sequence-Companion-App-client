@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { TeamPanel } from "@/components/lobby/TeamPanel";
-import { ConfigPanel } from "@/components/lobby/ConfigPanel";
 import { Button } from "@/components/ui/Button";
 import * as socket from "@/lib/socket";
 import type { PublicRoom, TeamColor } from "@/lib/game-types";
@@ -10,15 +9,27 @@ import type { PublicRoom, TeamColor } from "@/lib/game-types";
 export default function LobbyPage() {
 	const { code } = useParams<{ code: string }>();
 	const router = useRouter();
-	const [room, setRoom] = useState<PublicRoom | null>(null);
+	const [room, setRoom] = useState<PublicRoom | null>(() => {
+		try {
+			const stored = sessionStorage.getItem("currentRoom");
+			return stored ? (JSON.parse(stored) as PublicRoom) : null;
+		} catch { return null; }
+	});
 	const [myId] = useState(() => sessionStorage.getItem("playerId") ?? "");
 	const [error, setError] = useState("");
 
 	useEffect(() => {
 		const offs = [
 			socket.onRoomUpdated(setRoom),
+			socket.onHandDealt(({ hand }) => {
+				sessionStorage.setItem("currentHand", JSON.stringify(hand));
+			}),
+			socket.onTurnStarted((data) => {
+				sessionStorage.setItem("currentTurn", JSON.stringify(data));
+			}),
 			socket.onGameStarted((r) => {
 				setRoom(r);
+				sessionStorage.setItem("currentRoom", JSON.stringify(r));
 				router.push(`/game/${code}`);
 			}),
 			socket.onError(({ message }) => setError(message)),
@@ -55,23 +66,25 @@ export default function LobbyPage() {
 			</div>
 
 			{isHost && room && (
-				<>
-					<ConfigPanel
-						config={room.config}
-						onChange={() => {
-							// Config changes are only applied at room creation in V1
-							// Emit a config:update event in V2 if live config changes are needed
-						}}
-					/>
-					<Button fullWidth onClick={() => socket.startGame(code)}>
-						Start Game
-					</Button>
-				</>
+				<Button fullWidth onClick={() => socket.startGame(code)}>
+					Start Game
+				</Button>
 			)}
 
 			{!isHost && (
 				<p className="text-text-muted text-sm text-center">Waiting for host to start...</p>
 			)}
+
+			<Button
+				fullWidth
+				variant="secondary"
+				onClick={() => {
+					socket.disconnect();
+					router.push("/");
+				}}
+			>
+				Leave Room
+			</Button>
 		</main>
 	);
 }
