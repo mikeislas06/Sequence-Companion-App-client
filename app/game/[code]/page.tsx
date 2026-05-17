@@ -10,6 +10,7 @@ import { ActionBar } from "@/components/game/ActionBar";
 import { DiscardPile } from "@/components/game/DiscardPile";
 import { SequenceTracker } from "@/components/game/SequenceTracker";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function GamePage() {
 	const { code } = useParams<{ code: string }>();
@@ -91,6 +92,14 @@ export default function GamePage() {
 		};
 	}, [router]);
 
+	if (!room) {
+		return (
+			<main className="flex flex-col items-center justify-center min-h-screen">
+				<Spinner label="Loading game…" />
+			</main>
+		);
+	}
+
 	const isMyTurn = currentPlayerId === myId;
 	const isHost = room?.hostId === myId;
 	const activeTeams: TeamColor[] =
@@ -128,7 +137,7 @@ export default function GamePage() {
 								key={p.id}
 								className={`text-xs ${p.id === currentPlayerId ? "text-cream font-bold" : "text-text-muted"}`}
 							>
-								{p.name} ({p.cardCount})
+								{p.name}
 							</span>
 						))}
 					</div>

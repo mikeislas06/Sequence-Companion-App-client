@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ConfigPanel } from "@/components/lobby/ConfigPanel";
+import { Spinner } from "@/components/ui/Spinner";
 import * as socket from "@/lib/socket";
 import type { GameConfig } from "@/lib/game-types";
 
@@ -23,6 +24,7 @@ export default function Home() {
 	const [mode, setMode] = useState<"idle" | "create" | "join">("idle");
 	const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
 	const [error, setError] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
 		socket.connect();
@@ -40,19 +42,23 @@ export default function Home() {
 				sessionStorage.setItem("playerName", name);
 				router.push(`/lobby/${roomCode}`);
 			}),
-			socket.onError(({ message }) => setError(message)),
+			socket.onError(({ message }) => { setError(message); setIsLoading(false); }),
 		];
 		return () => offs.forEach((off) => off());
 	}, [name, router]);
 
 	const handleCreate = () => {
 		if (!name.trim()) return setError("Enter your name first");
+		setIsLoading(true);
+		setError("");
 		socket.createRoom(name.trim(), config);
 	};
 
 	const handleJoin = () => {
 		if (!name.trim()) return setError("Enter your name first");
 		if (!code.trim()) return setError("Enter a room code");
+		setIsLoading(true);
+		setError("");
 		socket.joinRoom(code.trim().toUpperCase(), name.trim());
 	};
 
@@ -72,6 +78,7 @@ export default function Home() {
 					maxLength={20}
 				/>
 				{error && <p className="text-danger text-sm text-center">{error}</p>}
+				{isLoading && <Spinner label="Connecting…" />}
 				{mode === "create" && (
 					<ConfigPanel
 						config={config}
@@ -79,7 +86,7 @@ export default function Home() {
 					/>
 				)}
 				{mode !== "join" && (
-					<Button fullWidth onClick={mode === "create" ? handleCreate : () => setMode("create")}>
+					<Button fullWidth onClick={mode === "create" ? handleCreate : () => setMode("create")} disabled={isLoading}>
 						Create Game
 					</Button>
 				)}
@@ -97,7 +104,7 @@ export default function Home() {
 							onChange={(e) => setCode(e.target.value.toUpperCase())}
 							maxLength={4}
 						/>
-						<Button fullWidth variant="secondary" onClick={handleJoin}>
+						<Button fullWidth variant="secondary" onClick={handleJoin} disabled={isLoading}>
 							Join
 						</Button>
 					</>

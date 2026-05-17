@@ -15,41 +15,82 @@ const BTN_BG: Record<TeamColor, string> = {
 	blue: "bg-team-blue",
 	red: "bg-team-red",
 };
+const BG_LIGHT: Record<TeamColor, string> = {
+	green: "bg-team-green/10",
+	blue: "bg-team-blue/10",
+	red: "bg-team-red/10",
+};
+const TEAM_LABEL: Record<TeamColor, string> = {
+	green: "Green Team",
+	blue: "Blue Team",
+	red: "Red Team",
+};
 
 interface TeamPanelProps {
 	team: PublicTeam;
 	myPlayerId: string;
+	hostId: string;
 	onJoin: (color: TeamColor) => void;
 	disabled?: boolean;
 }
 
-export function TeamPanel({ team, myPlayerId, onJoin, disabled }: TeamPanelProps) {
+export function TeamPanel({ team, myPlayerId, hostId, onJoin, disabled }: TeamPanelProps) {
 	const isFull = team.maxPlayers > 0 && team.players.length >= team.maxPlayers;
 	const amOnTeam = team.players.some((p) => p.id === myPlayerId);
+	const emptySlots =
+		team.maxPlayers > 0 ? Math.max(0, team.maxPlayers - team.players.length) : 0;
 
 	return (
-		<div className={`rounded-xl border-2 ${BORDER[team.color]} p-4 flex flex-col gap-2`}>
+		<div className={`rounded-xl border-2 ${BORDER[team.color]} ${BG_LIGHT[team.color]} p-4 flex flex-col gap-3`}>
 			<div className="flex justify-between items-center">
-				<span className={`font-display text-sm font-bold uppercase ${LABEL[team.color]}`}>
-					{team.color} {isFull ? "🔒" : ""}
+				<span className={`font-display text-base font-bold uppercase ${LABEL[team.color]}`}>
+					{TEAM_LABEL[team.color]}
 				</span>
-				<span className="text-text-muted text-xs">
-					{team.players.length}/{team.maxPlayers || "∞"}
+				<span className="text-text-muted text-xs font-mono">
+					{team.players.length}/{team.maxPlayers || "∞"} players
 				</span>
 			</div>
-			{team.players.map((p) => (
-				<div key={p.id} className="text-sm text-text-primary flex items-center gap-2">
-					<span className={`w-2 h-2 rounded-full ${BTN_BG[team.color]}`} />
-					{p.name}
-					{p.id === myPlayerId ? " (you)" : ""}
-				</div>
-			))}
+
+			<div className="flex flex-col gap-1.5">
+				{team.players.map((p) => (
+					<div
+						key={p.id}
+						className="flex items-center gap-2 bg-surface-dark/60 rounded-lg px-3 py-2"
+					>
+						<span className={`w-2 h-2 rounded-full flex-shrink-0 ${BTN_BG[team.color]}`} />
+						<span className="text-sm text-text-primary flex-1">{p.name}</span>
+						<div className="flex items-center gap-1.5">
+							{p.id === hostId && (
+								<span className="text-[10px] font-bold text-gold uppercase tracking-wide bg-gold/10 px-1.5 py-0.5 rounded">
+									Host
+								</span>
+							)}
+							{p.id === myPlayerId && (
+								<span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${LABEL[team.color]} bg-surface-dark/60`}>
+									You
+								</span>
+							)}
+						</div>
+					</div>
+				))}
+
+				{Array.from({ length: emptySlots }).map((_, i) => (
+					<div
+						key={`empty-${i}`}
+						className="flex items-center gap-2 border border-dashed border-text-muted/20 rounded-lg px-3 py-2"
+					>
+						<span className="w-2 h-2 rounded-full flex-shrink-0 bg-text-muted/20" />
+						<span className="text-sm text-text-muted/40 italic">Empty slot</span>
+					</div>
+				))}
+			</div>
+
 			{!amOnTeam && !isFull && !disabled && (
 				<button
 					onClick={() => onJoin(team.color)}
-					className={`mt-1 min-h-10 rounded-lg ${BTN_BG[team.color]} text-white text-sm font-semibold`}
+					className={`w-full min-h-10 rounded-lg ${BTN_BG[team.color]} text-white text-sm font-semibold transition-opacity active:opacity-80`}
 				>
-					Join
+					Join {TEAM_LABEL[team.color]}
 				</button>
 			)}
 		</div>
