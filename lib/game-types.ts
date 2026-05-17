@@ -30,6 +30,8 @@ export interface PublicRoom {
 	currentPlayerId?: string;
 	deckCount?: number;
 	lastPlayedCard?: Card;
+	sequences: Record<TeamColor, number>;
+	winnerTeam?: TeamColor;
 }
 
 export interface PublicTeam {

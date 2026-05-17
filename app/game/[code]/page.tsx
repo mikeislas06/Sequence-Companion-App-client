@@ -8,6 +8,8 @@ import { Timer } from "@/components/game/Timer";
 import { HandDisplay } from "@/components/game/HandDisplay";
 import { ActionBar } from "@/components/game/ActionBar";
 import { DiscardPile } from "@/components/game/DiscardPile";
+import { SequenceTracker } from "@/components/game/SequenceTracker";
+import { Button } from "@/components/ui/Button";
 
 export default function GamePage() {
 	const { code } = useParams<{ code: string }>();
@@ -57,10 +59,14 @@ export default function GamePage() {
 	});
 	const [error, setError] = useState("");
 	const [myId] = useState(() => sessionStorage.getItem("playerId") ?? "");
+	const [showTracker, setShowTracker] = useState(false);
 
 	useEffect(() => {
 		const offs = [
-			socket.onRoomUpdated(setRoom),
+			socket.onRoomUpdated((updatedRoom) => {
+				setRoom(updatedRoom);
+				sessionStorage.setItem("currentRoom", JSON.stringify(updatedRoom));
+			}),
 			socket.onHandDealt(({ hand }) => setHand(hand)),
 			socket.onHandUpdated(({ hand }) => {
 				setHand(hand);
@@ -113,7 +119,10 @@ export default function GamePage() {
 
 			<div className="flex gap-6 flex-wrap">
 				{activeTeams.map((color) => (
-					<div key={color} className="flex flex-col gap-1">
+					<div
+						key={color}
+						className={`flex flex-col gap-1 ${color === "green" ? "bg-team-green/20" : color === "blue" ? "bg-team-blue/20" : "bg-team-red/20"} rounded-lg p-3 flex-1 min-w-[120px]"}`}
+					>
 						{room?.teams[color].players.map((p) => (
 							<span
 								key={p.id}
@@ -134,6 +143,16 @@ export default function GamePage() {
 				onSelect={setSelectedCard}
 				disabled={!isMyTurn}
 			/>
+
+			{isHost && room && (
+				<Button variant="secondary" fullWidth onClick={() => setShowTracker(true)}>
+					Track Sequences
+				</Button>
+			)}
+
+			{showTracker && room && (
+				<SequenceTracker room={room} onClose={() => setShowTracker(false)} />
+			)}
 
 			<ActionBar
 				isMyTurn={isMyTurn}

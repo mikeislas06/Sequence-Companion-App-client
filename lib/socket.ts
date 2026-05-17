@@ -54,6 +54,14 @@ export function applyPenalty(roomCode: string, targetTeam: TeamColor): void {
 	getSocket().emit("penalty:apply", { roomCode, targetTeam });
 }
 
+export function updateSequence(roomCode: string, teamColor: TeamColor, delta: 1 | -1): void {
+	getSocket().emit("sequence:update", { roomCode, teamColor, delta });
+}
+
+export function resetGame(roomCode: string): void {
+	getSocket().emit("game:reset", { roomCode });
+}
+
 // Listeners
 type Off = () => void;
 function on<T>(event: string, handler: (data: T) => void): Off {
