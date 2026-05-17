@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ResultBoard } from "@/components/game-over/ResultBoard";
 import { Button } from "@/components/ui/Button";
@@ -8,9 +8,22 @@ import type { TeamColor, PublicRoom } from "@/lib/game-types";
 
 export default function GameOverPage() {
 	const router = useRouter();
-	const winner = (sessionStorage.getItem("winnerTeam") ?? "green") as TeamColor;
-	const room = JSON.parse(sessionStorage.getItem("currentRoom") ?? "null") as PublicRoom | null;
-	const myId = sessionStorage.getItem("playerId") ?? "";
+	const [winner] = useState<TeamColor>(() => {
+		if (typeof window === "undefined") return "green";
+		return (sessionStorage.getItem("winnerTeam") ?? "green") as TeamColor;
+	});
+	const [room] = useState<PublicRoom | null>(() => {
+		if (typeof window === "undefined") return null;
+		try {
+			return JSON.parse(sessionStorage.getItem("currentRoom") ?? "null") as PublicRoom | null;
+		} catch {
+			return null;
+		}
+	});
+	const [myId] = useState(() => {
+		if (typeof window === "undefined") return "";
+		return sessionStorage.getItem("playerId") ?? "";
+	});
 	const isHost = room?.hostId === myId;
 
 	useEffect(() => {
