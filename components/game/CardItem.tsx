@@ -86,7 +86,7 @@ function PipGrid({ rank, suitSymbol, color }: { rank: string; suitSymbol: string
 					{row.map((active, ci) => (
 						<span
 							key={ci}
-							className={`flex-1 text-center text-xs leading-none select-none ${active ? color : "invisible"}`}
+							className={`flex-1 text-center leading-none select-none ${active ? color : "invisible"}`}
 						>
 							{suitSymbol}
 						</span>
@@ -141,9 +141,10 @@ interface CardItemProps {
 	selected?: boolean;
 	onClick?: () => void;
 	disabled?: boolean;
+	compact?: boolean;
 }
 
-export function CardItem({ card, selected, onClick, disabled }: CardItemProps) {
+export function CardItem({ card, selected, onClick, disabled, compact }: CardItemProps) {
 	const red = isRedSuit(card.suit);
 	const twoEyed = isTwoEyedJack(card);
 	const oneEyed = isOneEyedJack(card);
@@ -176,7 +177,7 @@ export function CardItem({ card, selected, onClick, disabled }: CardItemProps) {
 
 			{/* Center */}
 			<div className="flex-1 flex items-center justify-center px-1 py-0.5 min-h-0">
-				{isFaceCard ? (
+				{isFaceCard || compact ? (
 					<FaceCardCenter
 						rank={card.rank}
 						suitSymbol={suitSymbol}
