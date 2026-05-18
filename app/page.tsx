@@ -42,7 +42,10 @@ export default function Home() {
 				sessionStorage.setItem("playerName", name);
 				router.push(`/lobby/${roomCode}`);
 			}),
-			socket.onError(({ message }) => { setError(message); setIsLoading(false); }),
+			socket.onError(({ message }) => {
+				setError(message);
+				setIsLoading(false);
+			}),
 		];
 		return () => offs.forEach((off) => off());
 	}, [name, router]);
@@ -85,11 +88,13 @@ export default function Home() {
 						onChange={(u) => setConfig((prev) => ({ ...prev, ...u }))}
 					/>
 				)}
-				{mode !== "join" && (
-					<Button fullWidth onClick={mode === "create" ? handleCreate : () => setMode("create")} disabled={isLoading}>
-						Create Game
-					</Button>
-				)}
+				<Button
+					fullWidth
+					onClick={mode === "create" ? handleCreate : () => setMode("create")}
+					disabled={isLoading}
+				>
+					Create Game
+				</Button>
 				{mode !== "join" ? (
 					<Button fullWidth variant="secondary" onClick={() => setMode("join")}>
 						Join Game
@@ -104,7 +109,12 @@ export default function Home() {
 							onChange={(e) => setCode(e.target.value.toUpperCase())}
 							maxLength={4}
 						/>
-						<Button fullWidth variant="secondary" onClick={handleJoin} disabled={isLoading}>
+						<Button
+							fullWidth
+							variant="secondary"
+							onClick={handleJoin}
+							disabled={isLoading}
+						>
 							Join
 						</Button>
 					</>
