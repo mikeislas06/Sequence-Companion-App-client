@@ -8,11 +8,16 @@ import type {
 	TimerSetting,
 } from "./game-types";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
-	if (!socket) socket = io(SOCKET_URL, { autoConnect: false });
+	if (!socket) {
+		if (!SOCKET_URL) {
+			throw new Error("NEXT_PUBLIC_SERVER_URL is not configured. Check your .env.local file.");
+		}
+		socket = io(SOCKET_URL, { autoConnect: false });
+	}
 	return socket;
 }
 
