@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ConfigPanel } from "@/components/lobby/ConfigPanel";
 import { Spinner } from "@/components/ui/Spinner";
+import { InstructionsModal } from "@/components/home/InstructionsModal";
+import { MenuSheet } from "@/components/home/MenuSheet";
 import * as socket from "@/lib/socket";
 import type { GameConfig } from "@/lib/game-types";
 
@@ -25,6 +27,15 @@ export default function Home() {
 	const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [showInstructions, setShowInstructions] = useState(false);
+	const [showMenu, setShowMenu] = useState(false);
+
+	useEffect(() => {
+		if (!localStorage.getItem("seq_seen_instructions")) {
+			setShowInstructions(true);
+			localStorage.setItem("seq_seen_instructions", "1");
+		}
+	}, []);
 
 	useEffect(() => {
 		socket.connect();
@@ -66,7 +77,16 @@ export default function Home() {
 	};
 
 	return (
-		<main className="flex flex-col items-center justify-center min-h-screen px-6 gap-8">
+		<main className="relative flex flex-col items-center justify-center min-h-screen px-6 gap-8">
+			<button
+				className="absolute top-4 right-4 w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl hover:bg-board-green-light/30 transition-colors"
+				onClick={() => setShowMenu(true)}
+				aria-label="Open menu"
+			>
+				<span className="w-5 h-0.5 bg-text-muted rounded-full" />
+				<span className="w-5 h-0.5 bg-text-muted rounded-full" />
+				<span className="w-5 h-0.5 bg-text-muted rounded-full" />
+			</button>
 			<div className="text-center">
 				<h1 className="font-display text-5xl text-cream tracking-wide">SEQUENCE</h1>
 				<p className="text-text-muted text-sm mt-2">Card companion app</p>
@@ -120,6 +140,12 @@ export default function Home() {
 					</>
 				)}
 			</div>
+			<InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
+			<MenuSheet
+				open={showMenu}
+				onClose={() => setShowMenu(false)}
+				onShowInstructions={() => setShowInstructions(true)}
+			/>
 		</main>
 	);
 }
