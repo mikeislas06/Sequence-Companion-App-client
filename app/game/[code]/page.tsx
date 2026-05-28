@@ -77,12 +77,14 @@ export default function GamePage() {
 			socket.onHandUpdated(({ hand }) => {
 				setHand(hand);
 				setSelectedCard(null);
+				setError("");
 			}),
 			socket.onTurnStarted(({ currentPlayerId, timerSetting }) => {
 				setCurrentPlayerId(currentPlayerId);
 				const t = timerSetting === "off" ? 0 : (timerSetting as number);
 				setTimerTotal(t);
 				setTimerRemaining(t);
+				setError("");
 			}),
 			socket.onTimerTick(({ remaining }) => setTimerRemaining(remaining)),
 			socket.onError(({ message }) => setError(message)),
