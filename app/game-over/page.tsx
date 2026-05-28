@@ -22,7 +22,7 @@ export default function GameOverPage() {
 	});
 	const [myId] = useState(() => {
 		if (typeof window === "undefined") return "";
-		return sessionStorage.getItem("playerId") ?? "";
+		return localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "";
 	});
 	const isHost = room?.hostId === myId;
 
@@ -62,7 +62,7 @@ export default function GameOverPage() {
 				<Button fullWidth onClick={handlePlayAgain}>
 					Play Again
 				</Button>
-				<Button fullWidth variant="secondary" onClick={() => router.push("/")}>
+				<Button fullWidth variant="secondary" onClick={() => { socket.clearSession(); router.push("/"); }}>
 					Go Back to Lobby
 				</Button>
 			</div>

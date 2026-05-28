@@ -59,14 +59,19 @@ export default function GamePage() {
 		}
 	});
 	const [error, setError] = useState("");
-	const [myId] = useState(() => sessionStorage.getItem("playerId") ?? "");
+	const [myId] = useState(() => localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "");
 	const [showTracker, setShowTracker] = useState(false);
 
 	useEffect(() => {
+		socket.connectIfNeeded();
 		const offs = [
 			socket.onRoomUpdated((updatedRoom) => {
 				setRoom(updatedRoom);
 				sessionStorage.setItem("currentRoom", JSON.stringify(updatedRoom));
+				// Sync turn state from room in case turn:started was missed during disconnect
+				if (updatedRoom.currentPlayerId !== undefined) {
+					setCurrentPlayerId(updatedRoom.currentPlayerId);
+				}
 			}),
 			socket.onHandDealt(({ hand }) => setHand(hand)),
 			socket.onHandUpdated(({ hand }) => {
@@ -84,6 +89,7 @@ export default function GamePage() {
 		];
 		socket.getSocket().on("game:over", ({ winnerTeam }: { winnerTeam: TeamColor }) => {
 			sessionStorage.setItem("winnerTeam", winnerTeam);
+			socket.clearSession();
 			router.push("/game-over");
 		});
 		return () => {

@@ -16,12 +16,13 @@ export default function LobbyPage() {
 			return stored ? (JSON.parse(stored) as PublicRoom) : null;
 		} catch { return null; }
 	});
-	const [myId] = useState(() => sessionStorage.getItem("playerId") ?? "");
+	const [myId] = useState(() => localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "");
 	const [error, setError] = useState("");
 	const [isStarting, setIsStarting] = useState(false);
 	const [copied, setCopied] = useState(false);
 
 	useEffect(() => {
+		socket.connectIfNeeded();
 		const offs = [
 			socket.onRoomUpdated((r) => {
 				setRoom(r);
@@ -140,6 +141,7 @@ export default function LobbyPage() {
 				fullWidth
 				variant="secondary"
 				onClick={() => {
+					socket.clearSession();
 					socket.disconnect();
 					router.push("/");
 				}}

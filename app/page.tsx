@@ -46,11 +46,13 @@ export default function Home() {
 			socket.onRoomCreated(({ roomCode, playerId }) => {
 				sessionStorage.setItem("playerId", playerId);
 				sessionStorage.setItem("playerName", name);
+				socket.persistSession(roomCode, playerId, name);
 				router.push(`/lobby/${roomCode}`);
 			}),
 			socket.onRoomJoined(({ roomCode, playerId }) => {
 				sessionStorage.setItem("playerId", playerId);
 				sessionStorage.setItem("playerName", name);
+				socket.persistSession(roomCode, playerId, name);
 				router.push(`/lobby/${roomCode}`);
 			}),
 			socket.onError(({ message }) => {

@@ -11,18 +11,62 @@ import type {
 const SOCKET_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 let socket: Socket | null = null;
 
+// ---------------------------------------------------------------------------
+// Session persistence — localStorage survives PWA background and screen lock
+// ---------------------------------------------------------------------------
+
+export function persistSession(roomCode: string, playerId: string, playerName: string): void {
+	if (typeof window === "undefined") return;
+	localStorage.setItem("seq_roomCode", roomCode);
+	localStorage.setItem("seq_playerId", playerId);
+	localStorage.setItem("seq_playerName", playerName);
+}
+
+export function clearSession(): void {
+	if (typeof window === "undefined") return;
+	localStorage.removeItem("seq_roomCode");
+	localStorage.removeItem("seq_playerId");
+	localStorage.removeItem("seq_playerName");
+}
+
+// ---------------------------------------------------------------------------
+// Socket singleton
+// ---------------------------------------------------------------------------
+
 export function getSocket(): Socket {
 	if (!socket) {
 		if (!SOCKET_URL) {
 			throw new Error("NEXT_PUBLIC_SERVER_URL is not configured. Check your .env.local file.");
 		}
 		socket = io(SOCKET_URL, { autoConnect: false });
+
+		// On every (re)connection, attempt to rejoin an active session.
+		// This fires on initial connect AND after Socket.IO recovers from
+		// a dropped connection (PWA backgrounded, screen locked, etc.).
+		socket.on("connect", () => {
+			if (typeof window === "undefined") return;
+			const roomCode = localStorage.getItem("seq_roomCode");
+			const playerId = localStorage.getItem("seq_playerId");
+			const playerName = localStorage.getItem("seq_playerName");
+			if (roomCode && playerId) {
+				socket!.emit("player:rejoin", {
+					roomCode,
+					playerId,
+					...(playerName ? { playerName } : {}),
+				});
+			}
+		});
 	}
 	return socket;
 }
 
 export function connect(): void {
 	getSocket().connect();
+}
+
+export function connectIfNeeded(): void {
+	const s = getSocket();
+	if (!s.connected) s.connect();
 }
 
 export function disconnect(): void {
