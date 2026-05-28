@@ -27,6 +27,7 @@ export default function LobbyPage() {
 			socket.onRoomUpdated((r) => {
 				setRoom(r);
 				sessionStorage.setItem("currentRoom", JSON.stringify(r));
+				setError("");
 			}),
 			socket.onHandDealt(({ hand }) => {
 				sessionStorage.setItem("currentHand", JSON.stringify(hand));
@@ -56,6 +57,7 @@ export default function LobbyPage() {
 
 	function handleStartGame() {
 		setIsStarting(true);
+		setError("");
 		socket.startGame(code);
 	}
 
