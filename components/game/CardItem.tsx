@@ -128,8 +128,8 @@ function FaceCardCenter({
 				</span>
 			)}
 			{oneEyed && (
-				<span className="text-[7px] font-bold text-red-500 uppercase tracking-wider mt-0.5">
-					REM
+				<span className="text-[7px] font-bold text-red-500 uppercase tracking-wide mt-0.5">
+					REMOVE
 				</span>
 			)}
 		</div>

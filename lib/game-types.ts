@@ -19,6 +19,9 @@ export interface GameConfig {
 	enforceNoTableTalk: boolean;
 	allowDeadCards: boolean;
 	showDeckCount: boolean;
+	// How many sequences a team must complete to win. 2 for 2 teams; 1 or 2 for
+	// 3 teams (host-selectable when 3 teams is chosen).
+	winningSequences?: 1 | 2;
 }
 
 export interface PublicRoom {
@@ -30,8 +33,19 @@ export interface PublicRoom {
 	currentPlayerId?: string;
 	deckCount?: number;
 	lastPlayedCard?: Card;
+	lastPlayedBy?: string;
 	sequences: Record<TeamColor, number>;
 	winnerTeam?: TeamColor;
+}
+
+export interface SessionResync {
+	roomCode: string;
+	playerId: string;
+	room: PublicRoom;
+	hand: Card[];
+	currentPlayerId?: string;
+	timerSetting: TimerSetting;
+	remaining: number;
 }
 
 export interface PublicTeam {

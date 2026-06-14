@@ -17,6 +17,7 @@ const DEFAULT_CONFIG: GameConfig = {
 	enforceNoTableTalk: false,
 	allowDeadCards: true,
 	showDeckCount: true,
+	winningSequences: 2,
 };
 
 export default function Home() {

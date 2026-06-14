@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Cinzel, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { PwaRegister } from "@/components/PwaRegister";
+import { SessionResync } from "@/components/SessionResync";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const cinzel = Cinzel({ subsets: ["latin"], variable: "--font-cinzel" });
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				className={`${inter.variable} ${cinzel.variable} ${playfair.variable} bg-board-green min-h-screen font-body text-text-primary`}
 			>
 				{children}
+				<SessionResync />
 				<PwaRegister />
 			</body>
 		</html>

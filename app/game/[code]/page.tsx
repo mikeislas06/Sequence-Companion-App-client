@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import * as socket from "@/lib/socket";
-import type { PublicRoom, Card, TeamColor, TimerSetting } from "@/lib/game-types";
+import type { PublicRoom, Card, TeamColor } from "@/lib/game-types";
 import { TurnIndicator } from "@/components/game/TurnIndicator";
 import { Timer } from "@/components/game/Timer";
 import { HandDisplay } from "@/components/game/HandDisplay";
@@ -59,11 +59,13 @@ export default function GamePage() {
 		}
 	});
 	const [error, setError] = useState("");
-	const [myId] = useState(() => localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "");
+	const [myId] = useState(() => {
+		if (typeof window === "undefined") return "";
+		return localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "";
+	});
 	const [showTracker, setShowTracker] = useState(false);
 
 	useEffect(() => {
-		socket.connectIfNeeded();
 		const offs = [
 			socket.onRoomUpdated((updatedRoom) => {
 				setRoom(updatedRoom);
@@ -79,19 +81,25 @@ export default function GamePage() {
 				setSelectedCard(null);
 				setError("");
 			}),
-			socket.onTurnStarted(({ currentPlayerId, timerSetting }) => {
+			socket.onTurnStarted(({ currentPlayerId, timerSetting, remaining }) => {
 				setCurrentPlayerId(currentPlayerId);
 				const t = timerSetting === "off" ? 0 : (timerSetting as number);
 				setTimerTotal(t);
-				setTimerRemaining(t);
+				// Use the server's remaining time when resyncing mid-turn; otherwise
+				// start a fresh full countdown.
+				setTimerRemaining(remaining !== undefined ? remaining : t);
 				setError("");
 			}),
 			socket.onTimerTick(({ remaining }) => setTimerRemaining(remaining)),
 			socket.onError(({ message }) => setError(message)),
 		];
+		// Pull fresh state on mount (covers navigation in and reconnects).
+		socket.resync();
 		socket.getSocket().on("game:over", ({ winnerTeam }: { winnerTeam: TeamColor }) => {
 			sessionStorage.setItem("winnerTeam", winnerTeam);
-			socket.clearSession();
+			// Keep the session so "Play Again" / a reconnect can still rejoin the
+			// room (it resets back to the lobby with the same code). The session is
+			// only cleared on an explicit leave.
 			router.push("/game-over");
 		});
 		return () => {
@@ -152,7 +160,7 @@ export default function GamePage() {
 				))}
 			</div>
 
-			<DiscardPile lastPlayedCard={room?.lastPlayedCard} />
+			<DiscardPile lastPlayedCard={room?.lastPlayedCard} lastPlayedBy={room?.lastPlayedBy} />
 
 			<HandDisplay
 				hand={hand}

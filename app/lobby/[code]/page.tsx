@@ -16,13 +16,15 @@ export default function LobbyPage() {
 			return stored ? (JSON.parse(stored) as PublicRoom) : null;
 		} catch { return null; }
 	});
-	const [myId] = useState(() => localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "");
+	const [myId] = useState(() => {
+		if (typeof window === "undefined") return "";
+		return localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "";
+	});
 	const [error, setError] = useState("");
 	const [isStarting, setIsStarting] = useState(false);
 	const [copied, setCopied] = useState(false);
 
 	useEffect(() => {
-		socket.connectIfNeeded();
 		const offs = [
 			socket.onRoomUpdated((r) => {
 				setRoom(r);
@@ -45,6 +47,8 @@ export default function LobbyPage() {
 				setIsStarting(false);
 			}),
 		];
+		// Pull fresh state on mount (covers navigation in and reconnects).
+		socket.resync();
 		return () => offs.forEach((off) => off());
 	}, [code, router]);
 
@@ -117,6 +121,13 @@ export default function LobbyPage() {
 				<div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
 					<span className="text-text-muted text-xs">Teams</span>
 					<span className="text-cream text-xs font-mono">{room.config.teamCount}</span>
+					<span className="text-text-muted text-xs">Win at</span>
+					<span className="text-cream text-xs font-mono">
+						{(room.config.winningSequences ?? (room.config.teamCount === 2 ? 2 : 1))}{" "}
+						{(room.config.winningSequences ?? (room.config.teamCount === 2 ? 2 : 1)) === 1
+							? "sequence"
+							: "sequences"}
+					</span>
 					<span className="text-text-muted text-xs">Timer</span>
 					<span className="text-cream text-xs font-mono">
 						{room.config.timer === "off" ? "Off" : `${room.config.timer}s`}
@@ -143,8 +154,10 @@ export default function LobbyPage() {
 				fullWidth
 				variant="secondary"
 				onClick={() => {
+					// Emit the leave first, then keep the socket alive so the packet
+					// actually flushes (disconnecting immediately can drop it).
+					socket.leaveRoom(code);
 					socket.clearSession();
-					socket.disconnect();
 					router.push("/");
 				}}
 			>

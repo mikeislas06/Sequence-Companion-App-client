@@ -30,7 +30,7 @@ interface SequenceTrackerProps {
 export function SequenceTracker({ room, onClose }: SequenceTrackerProps) {
 	const activeColors: TeamColor[] =
 		room.config.teamCount === 2 ? ["green", "blue"] : ["green", "blue", "red"];
-	const winCount = room.config.teamCount === 2 ? 2 : 1;
+	const winCount = room.config.winningSequences ?? (room.config.teamCount === 2 ? 2 : 1);
 
 	return (
 		<>

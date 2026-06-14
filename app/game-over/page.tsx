@@ -62,8 +62,16 @@ export default function GameOverPage() {
 				<Button fullWidth onClick={handlePlayAgain}>
 					Play Again
 				</Button>
-				<Button fullWidth variant="secondary" onClick={() => { socket.clearSession(); router.push("/"); }}>
-					Go Back to Lobby
+				<Button
+					fullWidth
+					variant="secondary"
+					onClick={() => {
+						socket.leaveRoom(room.code);
+						socket.clearSession();
+						router.push("/");
+					}}
+				>
+					Back to Home
 				</Button>
 			</div>
 		</main>

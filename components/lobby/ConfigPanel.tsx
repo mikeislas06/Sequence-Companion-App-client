@@ -40,7 +40,14 @@ export function ConfigPanel({ config, onChange }: ConfigPanelProps) {
 					{([2, 3] as const).map((n) => (
 						<button
 							key={n}
-							onClick={() => onChange({ teamCount: n })}
+							onClick={() =>
+								onChange({
+									teamCount: n,
+									// 2 teams always plays to 2 sequences; 3 teams defaults
+									// to 1 (host can opt into 2 via the toggle below).
+									winningSequences: n === 2 ? 2 : 1,
+								})
+							}
 							className={`w-10 h-8 rounded-lg text-sm font-semibold ${config.teamCount === n ? "bg-team-green text-white" : "bg-board-green-light text-text-muted"}`}
 						>
 							{n}
@@ -48,6 +55,14 @@ export function ConfigPanel({ config, onChange }: ConfigPanelProps) {
 					))}
 				</div>
 			</div>
+
+			{config.teamCount === 3 && (
+				<Toggle
+					label="Win on 2 sequences"
+					value={config.winningSequences === 2}
+					onChange={(v) => onChange({ winningSequences: v ? 2 : 1 })}
+				/>
+			)}
 
 			<div className="flex items-center justify-between">
 				<span className="text-sm text-text-primary">Players/team</span>

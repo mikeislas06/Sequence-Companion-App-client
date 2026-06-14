@@ -1,7 +1,13 @@
 import type { Card } from "@/lib/game-types";
 import { CardItem } from "./CardItem";
 
-export function DiscardPile({ lastPlayedCard }: { lastPlayedCard?: Card }) {
+export function DiscardPile({
+	lastPlayedCard,
+	lastPlayedBy,
+}: {
+	lastPlayedCard?: Card;
+	lastPlayedBy?: string;
+}) {
 	return (
 		<div className="flex flex-col items-center gap-1">
 			<p className="text-text-muted text-xs uppercase tracking-wide">Last Played</p>
@@ -14,6 +20,11 @@ export function DiscardPile({ lastPlayedCard }: { lastPlayedCard?: Card }) {
 					</div>
 				)}
 			</div>
+			{lastPlayedCard && lastPlayedBy && (
+				<p className="text-text-muted text-xs text-center max-w-[8rem] truncate">
+					by <span className="text-cream font-semibold">{lastPlayedBy}</span>
+				</p>
+			)}
 		</div>
 	);
 }
