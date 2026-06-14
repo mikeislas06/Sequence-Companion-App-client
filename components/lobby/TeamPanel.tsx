@@ -20,6 +20,11 @@ const BG_LIGHT: Record<TeamColor, string> = {
 	blue: "bg-team-blue/10",
 	red: "bg-team-red/10",
 };
+const RING: Record<TeamColor, string> = {
+	green: "ring-team-green",
+	blue: "ring-team-blue",
+	red: "ring-team-red",
+};
 const TEAM_LABEL: Record<TeamColor, string> = {
 	green: "Green Team",
 	blue: "Blue Team",
@@ -32,9 +37,24 @@ interface TeamPanelProps {
 	hostId: string;
 	onJoin: (color: TeamColor) => void;
 	disabled?: boolean;
+	// Manual starting-player selection (host only). When selectable, player rows
+	// become tappable to choose the starter; startingPlayerId is highlighted for
+	// everyone with a "Starts" badge.
+	selectable?: boolean;
+	startingPlayerId?: string;
+	onSelectPlayer?: (playerId: string) => void;
 }
 
-export function TeamPanel({ team, myPlayerId, hostId, onJoin, disabled }: TeamPanelProps) {
+export function TeamPanel({
+	team,
+	myPlayerId,
+	hostId,
+	onJoin,
+	disabled,
+	selectable,
+	startingPlayerId,
+	onSelectPlayer,
+}: TeamPanelProps) {
 	const isFull = team.maxPlayers > 0 && team.players.length >= team.maxPlayers;
 	const amOnTeam = team.players.some((p) => p.id === myPlayerId);
 	const emptySlots =
@@ -52,27 +72,44 @@ export function TeamPanel({ team, myPlayerId, hostId, onJoin, disabled }: TeamPa
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				{team.players.map((p) => (
-					<div
-						key={p.id}
-						className="flex items-center gap-2 bg-surface-dark/60 rounded-lg px-3 py-2"
-					>
-						<span className={`w-2 h-2 rounded-full flex-shrink-0 ${BTN_BG[team.color]}`} />
-						<span className="text-sm text-text-primary flex-1">{p.name}</span>
-						<div className="flex items-center gap-1.5">
-							{p.id === hostId && (
-								<span className="text-[10px] font-bold text-gold uppercase tracking-wide bg-gold/10 px-1.5 py-0.5 rounded">
-									Host
-								</span>
-							)}
-							{p.id === myPlayerId && (
-								<span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${LABEL[team.color]} bg-surface-dark/60`}>
-									You
-								</span>
-							)}
+				{team.players.map((p) => {
+					const isStarter = p.id === startingPlayerId;
+					const rowClass = `flex items-center gap-2 rounded-lg px-3 py-2 w-full text-left ${
+						isStarter ? `bg-surface-dark/60 ring-2 ${RING[team.color]}` : "bg-surface-dark/60"
+					} ${selectable ? "transition-opacity active:opacity-70" : ""}`;
+					const badges = (
+						<>
+							<span className={`w-2 h-2 rounded-full flex-shrink-0 ${BTN_BG[team.color]}`} />
+							<span className="text-sm text-text-primary flex-1">{p.name}</span>
+							<div className="flex items-center gap-1.5">
+								{isStarter && (
+									<span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded text-white ${BTN_BG[team.color]}`}>
+										Starts
+									</span>
+								)}
+								{p.id === hostId && (
+									<span className="text-[10px] font-bold text-gold uppercase tracking-wide bg-gold/10 px-1.5 py-0.5 rounded">
+										Host
+									</span>
+								)}
+								{p.id === myPlayerId && (
+									<span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${LABEL[team.color]} bg-surface-dark/60`}>
+										You
+									</span>
+								)}
+							</div>
+						</>
+					);
+					return selectable ? (
+						<button key={p.id} type="button" onClick={() => onSelectPlayer?.(p.id)} className={rowClass}>
+							{badges}
+						</button>
+					) : (
+						<div key={p.id} className={rowClass}>
+							{badges}
 						</div>
-					</div>
-				))}
+					);
+				})}
 
 				{Array.from({ length: emptySlots }).map((_, i) => (
 					<div

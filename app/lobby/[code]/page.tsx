@@ -65,6 +65,21 @@ export default function LobbyPage() {
 		socket.startGame(code);
 	}
 
+	const startMode = room?.config.startingPlayerMode ?? "default";
+	const startingPlayerId = room?.config.startingPlayerId;
+	// Manual mode with nobody chosen yet blocks the start (host taps a name first).
+	const needsStarterPick = startMode === "manual" && !startingPlayerId;
+
+	function toggleRandomStart() {
+		socket.setStartConfig(code, startMode === "random" ? "default" : "random");
+	}
+	function toggleManualStart() {
+		socket.setStartConfig(code, startMode === "manual" ? "default" : "manual");
+	}
+	function selectStarter(playerId: string) {
+		socket.setStartConfig(code, "manual", playerId);
+	}
+
 	const isHost = room?.hostId === myId;
 	const activeColors: TeamColor[] =
 		room?.config.teamCount === 2 ? ["green", "blue"] : ["green", "blue", "red"];
@@ -112,9 +127,53 @@ export default function LobbyPage() {
 						hostId={room.hostId}
 						onJoin={(c) => socket.joinTeam(code, c)}
 						disabled={room.status !== "lobby"}
+						selectable={isHost && startMode === "manual"}
+						startingPlayerId={startMode === "manual" ? startingPlayerId : undefined}
+						onSelectPlayer={selectStarter}
 					/>
 				))}
 			</div>
+
+			{isHost && (
+				<div className="rounded-xl bg-surface-dark/40 border border-text-muted/10 p-4 flex flex-col gap-3">
+					<p className="text-text-muted text-xs uppercase tracking-wide">Starting player</p>
+					<div className="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							onClick={toggleRandomStart}
+							aria-pressed={startMode === "random"}
+							className={`min-h-10 rounded-lg text-sm font-semibold transition-opacity active:opacity-80 ${
+								startMode === "random"
+									? "bg-gold text-surface-dark"
+									: "bg-surface-dark/60 text-text-muted border border-text-muted/20"
+							}`}
+						>
+							Randomize
+						</button>
+						<button
+							type="button"
+							onClick={toggleManualStart}
+							aria-pressed={startMode === "manual"}
+							className={`min-h-10 rounded-lg text-sm font-semibold transition-opacity active:opacity-80 ${
+								startMode === "manual"
+									? "bg-gold text-surface-dark"
+									: "bg-surface-dark/60 text-text-muted border border-text-muted/20"
+							}`}
+						>
+							Choose player
+						</button>
+					</div>
+					<p className="text-text-muted text-xs">
+						{startMode === "random"
+							? "A random player will start the game."
+							: startMode === "manual"
+								? needsStarterPick
+									? "Tap a player above to set who starts."
+									: "Tap a player above to change who starts."
+								: "Default: the first green player starts. Pick a mode to change it."}
+					</p>
+				</div>
+			)}
 
 			<div className="rounded-xl bg-surface-dark/40 border border-text-muted/10 p-4 flex flex-col gap-2">
 				<p className="text-text-muted text-xs uppercase tracking-wide">Game Settings</p>
@@ -140,9 +199,14 @@ export default function LobbyPage() {
 			</div>
 
 			{isHost ? (
-				<Button fullWidth onClick={handleStartGame} disabled={isStarting}>
-					{isStarting ? "Starting…" : "Start Game"}
-				</Button>
+				<div className="flex flex-col gap-2">
+					<Button fullWidth onClick={handleStartGame} disabled={isStarting || needsStarterPick}>
+						{isStarting ? "Starting…" : "Start Game"}
+					</Button>
+					{needsStarterPick && (
+						<p className="text-text-muted text-xs text-center">Choose a starting player to begin.</p>
+					)}
+				</div>
 			) : (
 				<div className="flex flex-col items-center gap-3 py-2">
 					<Spinner size="sm" />

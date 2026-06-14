@@ -22,6 +22,11 @@ export interface GameConfig {
 	// How many sequences a team must complete to win. 2 for 2 teams; 1 or 2 for
 	// 3 teams (host-selectable when 3 teams is chosen).
 	winningSequences?: 1 | 2;
+	// How the starting player is chosen. "default"/absent → first green player;
+	// "random" → server picks a random starting offset; "manual" → host selects
+	// startingPlayerId on the lobby screen. The turn order is never reshuffled.
+	startingPlayerMode?: "default" | "random" | "manual";
+	startingPlayerId?: string;
 }
 
 export interface PublicRoom {

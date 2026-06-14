@@ -135,6 +135,14 @@ export function startGame(roomCode: string): void {
 	getSocket().emit("game:start", { roomCode });
 }
 
+export function setStartConfig(
+	roomCode: string,
+	mode: "default" | "random" | "manual",
+	startingPlayerId?: string,
+): void {
+	getSocket().emit("game:setStartConfig", { roomCode, mode, startingPlayerId });
+}
+
 export function playCard(roomCode: string, cardId: string): void {
 	getSocket().emit("card:play", { roomCode, cardId });
 }
