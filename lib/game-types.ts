@@ -35,6 +35,8 @@ export interface PublicRoom {
 	status: RoomStatus;
 	config: GameConfig;
 	teams: Record<TeamColor, PublicTeam>;
+	// Players who have joined but not yet picked a team (the "pending" pool).
+	unassigned: PublicPlayer[];
 	currentPlayerId?: string;
 	deckCount?: number;
 	lastPlayedCard?: Card;
@@ -62,7 +64,7 @@ export interface PublicTeam {
 export interface PublicPlayer {
 	id: string;
 	name: string;
-	teamColor: TeamColor;
+	teamColor: TeamColor | null;
 	cardCount: number;
 }
 

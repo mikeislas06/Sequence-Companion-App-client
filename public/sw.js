@@ -1,4 +1,4 @@
-const CACHE = "sequence-v1";
+const CACHE = "sequence-v1.3.3";
 
 // Cache only static shell assets on install
 self.addEventListener("install", (event) => {

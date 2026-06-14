@@ -128,7 +128,7 @@ export default function GamePage() {
 			{currentPlayer && (
 				<TurnIndicator
 					playerName={currentPlayer.name}
-					teamColor={currentPlayer.teamColor}
+					teamColor={currentPlayer.teamColor ?? "green"}
 					isMyTurn={isMyTurn}
 				/>
 			)}

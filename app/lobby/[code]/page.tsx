@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { TeamPanel } from "@/components/lobby/TeamPanel";
+import { PendingPanel } from "@/components/lobby/PendingPanel";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import * as socket from "@/lib/socket";
@@ -83,8 +84,10 @@ export default function LobbyPage() {
 	const isHost = room?.hostId === myId;
 	const activeColors: TeamColor[] =
 		room?.config.teamCount === 2 ? ["green", "blue"] : ["green", "blue", "red"];
+	const pendingPlayers = room?.unassigned ?? [];
+	const hasPending = pendingPlayers.length > 0;
 	const totalPlayers = room
-		? activeColors.reduce((sum, c) => sum + room.teams[c].players.length, 0)
+		? activeColors.reduce((sum, c) => sum + room.teams[c].players.length, 0) + pendingPlayers.length
 		: 0;
 	const totalSlots = room
 		? activeColors.reduce((sum, c) => sum + (room.teams[c].maxPlayers || 0), 0)
@@ -117,6 +120,8 @@ export default function LobbyPage() {
 				<span className="text-text-muted text-xs uppercase tracking-wide">Players</span>
 				<span className="text-text-muted text-xs font-mono">{totalPlayers}/{totalSlots}</span>
 			</div>
+
+			<PendingPanel players={pendingPlayers} myPlayerId={myId} hostId={room.hostId} />
 
 			<div className="flex flex-col gap-3">
 				{activeColors.map((color) => (
@@ -200,11 +205,17 @@ export default function LobbyPage() {
 
 			{isHost ? (
 				<div className="flex flex-col gap-2">
-					<Button fullWidth onClick={handleStartGame} disabled={isStarting || needsStarterPick}>
+					<Button fullWidth onClick={handleStartGame} disabled={isStarting || needsStarterPick || hasPending}>
 						{isStarting ? "Starting…" : "Start Game"}
 					</Button>
-					{needsStarterPick && (
-						<p className="text-text-muted text-xs text-center">Choose a starting player to begin.</p>
+					{hasPending ? (
+						<p className="text-text-muted text-xs text-center">
+							Everyone must pick a team before the game can start.
+						</p>
+					) : (
+						needsStarterPick && (
+							<p className="text-text-muted text-xs text-center">Choose a starting player to begin.</p>
+						)
 					)}
 				</div>
 			) : (
