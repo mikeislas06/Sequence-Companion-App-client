@@ -209,6 +209,12 @@ export const onPenaltyApplied = (
 	handler: (data: { teamColor: TeamColor; reason: string }) => void,
 ): Off => on("penalty:applied", handler);
 
+// Fired when a team completes a sequence (the host bumps their count up). Used
+// to surface a celebratory announcement to everyone in the room.
+export const onSequenceCompleted = (
+	handler: (data: { teamColor: TeamColor; count: number }) => void,
+): Off => on("sequence:completed", handler);
+
 export const onError = (handler: (data: { message: string }) => void): Off => on("error", handler);
 
 export const onTurnStarted = (

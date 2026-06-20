@@ -41,7 +41,6 @@ export default function LobbyPage() {
 			socket.onGameStarted((r) => {
 				setRoom(r);
 				sessionStorage.setItem("currentRoom", JSON.stringify(r));
-				router.push(`/game/${code}`);
 			}),
 			socket.onError(({ message }) => {
 				setError(message);
@@ -52,6 +51,16 @@ export default function LobbyPage() {
 		socket.resync();
 		return () => offs.forEach((off) => off());
 	}, [code, router]);
+
+	// Navigate off the authoritative room status rather than the one-shot
+	// game:started event. room:updated / session:resync also carry the status,
+	// so the host (and everyone) lands on the game screen as soon as the room is
+	// in_game — no missed-event race that previously needed a manual refresh.
+	useEffect(() => {
+		if (room?.status === "in_game") {
+			router.push(`/game/${code}`);
+		}
+	}, [room?.status, code, router]);
 
 	function handleCopyCode() {
 		navigator.clipboard.writeText(code).then(() => {

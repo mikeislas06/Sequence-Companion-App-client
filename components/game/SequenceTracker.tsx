@@ -68,7 +68,7 @@ export function SequenceTracker({ room, onClose }: SequenceTrackerProps) {
 									<button
 										onClick={() => socket.updateSequence(room.code, color, -1)}
 										disabled={count === 0}
-										className="w-10 h-10 rounded-full bg-board-green-light text-cream font-bold text-xl disabled:opacity-30 flex items-center justify-center"
+										className={`w-10 h-10 rounded-full border-2 bg-transparent font-bold text-xl disabled:opacity-30 flex items-center justify-center ${BORDERS[color]} ${COLORS[color]}`}
 									>
 										−
 									</button>

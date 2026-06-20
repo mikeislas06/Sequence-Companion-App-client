@@ -9,6 +9,7 @@ import { HandDisplay } from "@/components/game/HandDisplay";
 import { ActionBar } from "@/components/game/ActionBar";
 import { DiscardPile } from "@/components/game/DiscardPile";
 import { SequenceTracker } from "@/components/game/SequenceTracker";
+import { SequenceAnnouncement } from "@/components/game/SequenceAnnouncement";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -64,6 +65,7 @@ export default function GamePage() {
 		return localStorage.getItem("seq_playerId") ?? sessionStorage.getItem("playerId") ?? "";
 	});
 	const [showTracker, setShowTracker] = useState(false);
+	const [sequenceTeam, setSequenceTeam] = useState<TeamColor | null>(null);
 
 	useEffect(() => {
 		const offs = [
@@ -91,22 +93,37 @@ export default function GamePage() {
 				setError("");
 			}),
 			socket.onTimerTick(({ remaining }) => setTimerRemaining(remaining)),
+			socket.onSequenceCompleted(({ teamColor }) => setSequenceTeam(teamColor)),
 			socket.onError(({ message }) => setError(message)),
 		];
 		// Pull fresh state on mount (covers navigation in and reconnects).
 		socket.resync();
-		socket.getSocket().on("game:over", ({ winnerTeam }: { winnerTeam: TeamColor }) => {
-			sessionStorage.setItem("winnerTeam", winnerTeam);
+		return () => {
+			offs.forEach((off) => off());
+		};
+	}, [router]);
+
+	// Navigate to the game-over screen off the authoritative room status. The
+	// room:updated broadcast carries status + winnerTeam, so this fires reliably
+	// for the host (who triggers the win) instead of relying solely on the
+	// one-shot game:over event, which sometimes required a manual refresh.
+	useEffect(() => {
+		if (room?.status === "game_over" && room.winnerTeam) {
+			sessionStorage.setItem("winnerTeam", room.winnerTeam);
 			// Keep the session so "Play Again" / a reconnect can still rejoin the
 			// room (it resets back to the lobby with the same code). The session is
 			// only cleared on an explicit leave.
 			router.push("/game-over");
-		});
-		return () => {
-			offs.forEach((off) => off());
-			socket.getSocket().off("game:over");
-		};
-	}, [router]);
+		}
+	}, [room?.status, room?.winnerTeam, router]);
+
+	// Auto-dismiss the "got a sequence!" announcement after a few seconds so it
+	// stays celebratory without blocking the game.
+	useEffect(() => {
+		if (!sequenceTeam) return;
+		const t = setTimeout(() => setSequenceTeam(null), 3500);
+		return () => clearTimeout(t);
+	}, [sequenceTeam]);
 
 	if (!room) {
 		return (
@@ -122,6 +139,14 @@ export default function GamePage() {
 		room?.config.teamCount === 2 ? ["green", "blue"] : ["green", "blue", "red"];
 	const allPlayers = room ? Object.values(room.teams).flatMap((t) => t.players) : [];
 	const currentPlayer = allPlayers.find((p) => p.id === currentPlayerId);
+	const winCount =
+		room?.config.winningSequences ?? (room?.config.teamCount === 2 ? 2 : 1);
+	const TEAM_TEXT: Record<TeamColor, string> = {
+		green: "text-team-green",
+		blue: "text-team-blue",
+		red: "text-team-red",
+	};
+	const TEAM_LABEL: Record<TeamColor, string> = { green: "Green", blue: "Blue", red: "Red" };
 
 	return (
 		<main className="flex flex-col gap-4 px-4 py-6 max-w-md mx-auto min-h-screen">
@@ -148,6 +173,17 @@ export default function GamePage() {
 						key={color}
 						className={`flex flex-col gap-1 ${color === "green" ? "bg-team-green/20" : color === "blue" ? "bg-team-blue/20" : "bg-team-red/20"} rounded-lg p-3 flex-1 min-w-[120px]"}`}
 					>
+						<div className="flex items-center justify-between gap-2">
+							<span
+								className={`font-display text-[11px] uppercase tracking-wide font-bold ${TEAM_TEXT[color]}`}
+							>
+								{TEAM_LABEL[color]}
+							</span>
+							<span className={`text-sm font-bold ${TEAM_TEXT[color]}`}>
+								{room?.sequences?.[color] ?? 0}
+								<span className="text-text-muted font-normal">/{winCount}</span>
+							</span>
+						</div>
 						{room?.teams[color].players.map((p) => (
 							<span
 								key={p.id}
@@ -178,6 +214,8 @@ export default function GamePage() {
 			{showTracker && room && (
 				<SequenceTracker room={room} onClose={() => setShowTracker(false)} />
 			)}
+
+			<SequenceAnnouncement teamColor={sequenceTeam} onDismiss={() => setSequenceTeam(null)} />
 
 			<ActionBar
 				isMyTurn={isMyTurn}
