@@ -61,7 +61,14 @@ export function SessionResync() {
 
 			// Only navigate when we're not already on the right screen, so an
 			// in-place reconnect (background→foreground) doesn't disrupt the view.
-			if (pathname !== target) router.replace(target);
+			//
+			// Never pull the user OFF the home page: landing on "/" is a deliberate
+			// destination (back button, reload, or wanting a fresh game). Auto-
+			// redirecting from "/" used to trap players in their old room. The home
+			// screen instead offers an explicit "Rejoin last game?" button. This does
+			// NOT affect app/tab-switch reconnection, which happens on room pages
+			// where pathname already equals target (so this redirect is skipped).
+			if (pathname !== target && pathname !== "/") router.replace(target);
 		});
 
 		return () => {

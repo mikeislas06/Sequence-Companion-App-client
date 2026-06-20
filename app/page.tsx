@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { InstructionsModal } from "@/components/home/InstructionsModal";
 import { MenuSheet } from "@/components/home/MenuSheet";
 import * as socket from "@/lib/socket";
-import type { GameConfig } from "@/lib/game-types";
+import type { GameConfig, PublicRoom } from "@/lib/game-types";
 
 const DEFAULT_CONFIG: GameConfig = {
 	teamCount: 2,
@@ -30,12 +30,17 @@ export default function Home() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [showInstructions, setShowInstructions] = useState(false);
 	const [showMenu, setShowMenu] = useState(false);
+	// A saved session means there's a game the player can hop back into. We offer
+	// this as an explicit choice instead of force-redirecting them off the home
+	// screen.
+	const [resumeCode, setResumeCode] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (!localStorage.getItem("seq_seen_instructions")) {
 			setShowInstructions(true);
 			localStorage.setItem("seq_seen_instructions", "1");
 		}
+		setResumeCode(localStorage.getItem("seq_roomCode"));
 	}, []);
 
 	useEffect(() => {
@@ -60,12 +65,53 @@ export default function Home() {
 				setError(message);
 				setIsLoading(false);
 			}),
+			// The saved session points at a room that no longer exists — drop the
+			// rejoin offer so we don't send the player into a dead room.
+			socket.onSessionInvalid(() => setResumeCode(null)),
 		];
 		return () => offs.forEach((off) => off());
 	}, [name, router]);
 
+	// Starting a brand-new game while an old session is still saved: cleanly leave
+	// the previous room and wipe its cached state so its broadcasts can't bleed
+	// into the new game.
+	const abandonStaleSession = () => {
+		const old = localStorage.getItem("seq_roomCode");
+		if (!old) return;
+		socket.leaveRoom(old);
+		socket.clearSession();
+		setResumeCode(null);
+		try {
+			sessionStorage.removeItem("currentRoom");
+			sessionStorage.removeItem("currentHand");
+			sessionStorage.removeItem("currentTurn");
+		} catch {
+			/* ignore */
+		}
+	};
+
+	const handleRejoin = () => {
+		if (!resumeCode) return;
+		// Prefer the cached status so we land on the right screen without a flash;
+		// SessionResync will still correct us once it's off the home page.
+		let target = `/lobby/${resumeCode}`;
+		try {
+			const stored = sessionStorage.getItem("currentRoom");
+			if (stored) {
+				const r = JSON.parse(stored) as PublicRoom;
+				if (r.status === "in_game") target = `/game/${resumeCode}`;
+				else if (r.status === "game_over") target = "/game-over";
+			}
+		} catch {
+			/* fall back to the lobby route */
+		}
+		socket.connectIfNeeded();
+		router.push(target);
+	};
+
 	const handleCreate = () => {
 		if (!name.trim()) return setError("Enter your name first");
+		abandonStaleSession();
 		setIsLoading(true);
 		setError("");
 		socket.createRoom(name.trim(), config);
@@ -74,6 +120,7 @@ export default function Home() {
 	const handleJoin = () => {
 		if (!name.trim()) return setError("Enter your name first");
 		if (!code.trim()) return setError("Enter a room code");
+		abandonStaleSession();
 		setIsLoading(true);
 		setError("");
 		socket.joinRoom(code.trim().toUpperCase(), name.trim());
@@ -95,6 +142,19 @@ export default function Home() {
 				<p className="text-text-muted text-sm mt-2">Card companion app</p>
 			</div>
 			<div className="w-full max-w-sm flex flex-col gap-4">
+				{resumeCode && (
+					<button
+						onClick={handleRejoin}
+						className="w-full rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-left active:opacity-80 transition-opacity"
+					>
+						<span className="block text-gold text-sm font-semibold">
+							Rejoin last game?
+						</span>
+						<span className="block text-text-muted text-xs mt-0.5">
+							Room {resumeCode} — tap to return
+						</span>
+					</button>
+				)}
 				<Input
 					id="name"
 					label="Your name"
